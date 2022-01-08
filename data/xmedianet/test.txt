@@ -1,1 +1,1 @@
-
+please put "clip_train.pkl" and "clip_est.pkl" in this directory
