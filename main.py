@@ -33,7 +33,7 @@ def one_hot(x, num_class):
 def train(model, loader, optimizer, num_class, choose_loss='PAN', modality_imbalanced=False):
     model.train()
     running_loss = 0.0
-    for img, text, labels, id in loader:   # 这是在线抽取特征时的数据处理方式
+    for img, text, labels, id in loader:  
         optimizer.zero_grad()
         text = text.to(device)
         img = img.to(device)
