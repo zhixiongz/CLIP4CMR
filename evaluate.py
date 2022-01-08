@@ -1,25 +1,11 @@
 """
-evaluation indicators, including mAP, precision@K, recall@K.
+evaluation indicators, including mAP, recall@K.
 mAP is the most common metric in supervised cross-modal retrieval, which measures the performance of the retrieval model on each category.
 """
 import numpy as np
 import scipy.spatial
 import torch
 from collections import Counter
-
-
-def calc_precision_at_K(order, label, K):
-    ranks = order[:, :K]
-    tmp = 0
-    for i in range(ranks.shape[0]):
-        r_label = label[i]
-        query = ranks[i]
-        query_label = label[query]
-        res = Counter(query_label)
-        n_pos = res[r_label]
-        tmp = tmp + n_pos / K
-    return tmp / order.shape[0]
-
 
 def fx_calc_map_label(image, text, label, k=0, dist_method='L2'):
     if dist_method == 'L2':
