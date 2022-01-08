@@ -176,7 +176,7 @@ if __name__ == '__main__':
         t_map = []
         best_map = 0.0
         no_up = 0  # early stop
-        best_model_wts = copy.deepcopy(model_ft.state_dict())  # 深拷贝，保存模型的参数
+        best_model_wts = copy.deepcopy(model_ft.state_dict())  
 
         for epoch in range(MAX_EPOCH):
             print('==============================')
