@@ -1,7 +1,6 @@
 """
-评价指标是mAP：precision只考虑了准确率（查准率），但是没有考虑召回率（查全率）。准确率高召回率就低
-AP综合考虑准确率和召回率，衡量的是学出来的模型在每个类别上的好坏，
-mAP衡量的是学出的模型在所有类别上的好坏，得到AP后mAP的计算就变得很简单了，就是取所有AP的平均值。
+evaluation indicators, including mAP, precision@K, recall@K.
+mAP is the most common metric in supervised cross-modal retrieval, which measures the performance of the retrieval model on each category.
 """
 import numpy as np
 import scipy.spatial
