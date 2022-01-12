@@ -40,7 +40,7 @@ def train(model, loader, optimizer, num_class, choose_loss='PAN', modality_imbal
         label_realvalue = labels.int().type(torch.long).to(device)  # nuswide, wiki, xmedia
         # label_realvalue = (labels - 1).int().type(torch.long).to(device)  # pascal
         centers, img_feature, text_feature, img_predict, text_predict = model(img, text)
-        centers = centers[:img_feature.shape[1]] #.clone().detach() 重新命名变量
+        centers = centers[:img_feature.shape[1]]  # multiple GPUs
         if modality_imbalanced:     # i.e. 100%I, 30%T
             bsz = int(img_feature.shape[0]/10)
             text_feature = text_feature[:3*bsz]
