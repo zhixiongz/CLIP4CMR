@@ -119,10 +119,10 @@ def load_dataset(name, bsz):
         train_ids = data['ids']
     with open(test_loc, 'rb') as f_pkl:
         data = pickle.load(f_pkl)
-        test_labels = data['label']    # nus [:1000]
-        test_texts = data['text']      # nus[:1000]
-        test_images = data['image']    # nus [:1000]
-        test_ids = data['ids']         # nus [:1000]
+        test_labels = data['label']   
+        test_texts = data['text']      
+        test_images = data['image']   
+        test_ids = data['ids']        
     imgs = {'train': train_images, 'test': test_images}
     texts = {'train': train_texts,  'test': test_texts}
     labs = {'train': train_labels, 'test': test_labels}
