@@ -155,6 +155,7 @@ if __name__ == '__main__':
     MAX_EPOCH = 500
     temperature = 1.0
     lr = 1e-4
+    betas = (0.5, 0.999)
     weight_decay = 0
     early_stop = 10
 
