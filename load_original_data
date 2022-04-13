@@ -1,0 +1,121 @@
+import os
+import json
+import pickle
+import torch
+from PIL import Image, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+import numpy as np
+import random
+import clip
+import re
+import string
+punctuation_string = string.punctuation     # CLIP的分词器对字符长度很不友好，尤其是数字和字符，每一个单个数字都会被识别成一个token
+                                            # CLIP对带有中文拼音、罕见词的分词也很不友好，容易导致token超出最大长度76，比如PsittacosaurusYou被切分成了7个单词
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model, preprocess = clip.load("RN50", device=device)  #['RN50', 'RN101', 'RN50x4', 'RN50x16', 'ViT-B/32', 'ViT-B/16']
+
+
+def load_dataset(name='wikipedia_dataset'):  
+    """
+    Load captions and image features
+    Possible options: wikipedia, NUS-WIDE-10K, Pascal-Sentence, xmedia
+    """
+    # loc = '../benchpark/' + name +'/'
+    loc = '/u01/isi/zzx/benchpark/' + name
+
+    # Captions
+    train_imgs, dev_imgs, test_imgs = [], [], []
+    train_caps, dev_caps, test_caps = [], [], []
+    train_labs, dev_labs, test_labs = [], [], []
+    train_ids, dev_ids, test_ids = [], [], []
+
+    train_file_path = os.path.join(loc, 'split/train.txt')
+    dev_file_path = os.path.join(loc, 'split/valid.txt')
+    test_file_path = os.path.join(loc, 'split/test.txt')
+
+    with open(test_file_path, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            id, label = line.replace('\n', '').split(':')
+            text = json.load(open(os.path.join(loc, 'text', id + '.json'), 'r', encoding='UTF_8'))
+            text = text.split(' ')[:50]
+            text = ' '.join(text)
+            text = re.sub('[{}]'.format(punctuation_string), "", text)
+            text = re.sub('[\d]', '', text)
+            try:
+                text_ids = clip.tokenize(text).detach().cpu()
+                test_caps.append(text_ids.numpy())
+                test_labs.append(int(label))
+                test_ids.append(id)
+            except:
+                continue
+            image = Image.open(os.path.join(loc, 'wiki_image', id + '.jpg'))  # 使用open函数打开后返回的图像模式都是‘RGB’或者灰度图其模式为‘L’
+            image = preprocess(image).unsqueeze(0)
+            test_imgs.append(image.numpy())
+    print(len(test_imgs))
+    print(len(test_caps))
+    print(' Successfully process test data')
+    test_data = {'image': test_imgs, "text": test_caps, "label": test_labs, 'ids': test_ids}
+    with open('test.pkl', 'wb') as f:
+        pickle.dump(test_data, f)
+
+    with open(train_file_path, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            id, label = line.replace('\n', '').split(':')
+            text = json.load(open(os.path.join(loc, 'text', id + '.json'), 'r', encoding='UTF_8'))
+            text = text.split(' ')[:50]
+            text = ' '.join(text)
+            text = re.sub('[{}]'.format(punctuation_string), "", text)  # 去掉符号
+            text = re.sub('[\d]', '', text)                             # 去掉数字
+            try:
+                text_ids = clip.tokenize(text).detach().cpu()
+                train_caps.append(text_ids.numpy())
+                train_labs.append(int(label))
+                train_ids.append(id)
+            except:
+                continue
+            image = Image.open(os.path.join(loc, 'wiki_image', id + '.jpg'))  # 使用open函数打开后返回的图像模式都是‘RGB’或者灰度图其模式为‘L’
+            image = preprocess(image).unsqueeze(0)
+            train_imgs.append(image.numpy())
+    print(len(train_imgs))
+    print(len(train_caps))
+    train_data = {'image': train_imgs, "text": train_caps, "label": train_labs, 'ids': train_ids}
+    with open('train.pkl', 'wb') as f:
+        pickle.dump(train_data, f)
+    print(' Successfully process training data')
+
+    with open(dev_file_path, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            id, label = line.replace('\n', '').split(':')
+            text = json.load(open(os.path.join(loc, 'text', id + '.json'), 'r', encoding='UTF_8'))
+            text = text.split(' ')[:50]
+            text = ' '.join(text)
+            text = re.sub('[{}]'.format(punctuation_string), "", text)
+            text = re.sub('[\d]', '', text)
+            try:
+                text_ids = clip.tokenize(text).detach().cpu()
+
+                dev_caps.append(text_ids.numpy())
+                dev_labs.append(int(label))
+                dev_ids.append(id)
+            except:
+                continue
+            image = Image.open(os.path.join(loc, 'wiki_image', id + '.jpg'))  # 使用open函数打开后返回的图像模式都是‘RGB’或者灰度图其模式为‘L’
+            image = preprocess(image).unsqueeze(0)
+            dev_imgs.append(image.numpy())
+    print(len(dev_imgs))
+    print(len(dev_caps))
+
+    dev_ims = np.array(dev_imgs)
+    dev_caps = np.array(dev_caps)
+    valid_data = {'image': dev_ims, "text": dev_caps, "label": dev_labs, 'ids': dev_ids}
+    with open('dev.pkl', 'wb') as f:
+        pickle.dump(valid_data, f)
+    print('Successfully process dev data')
+
+
+if __name__ == '__main__':
+    load_dataset()
