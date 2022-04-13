@@ -281,6 +281,62 @@ def Label_Regression_Loss(view1_predict, view2_predict, label_onehot):
     return loss
 
 
+def Proxy_NCA(features, label, proxies, mrg=0.1, alpha=1): 
+    """
+    Input:
+    :param feature: [2*batch, dim]  concat image and text features
+    :param label: [2*batch]
+    :param proxies: [feature_dim, n_classes]
+    :return: Proxy Anchor loss
+    
+    P = torch.t(proxies)  # [feature_dim, n_classes]-->[n_classes, feature_dim] 
+    n_classes = P.shape[0]
+    # similar to Proxc-NCA and Normlized Softmax
+    cos = F.linear(features, P)  # Calcluate cosine similarity [batch, n_classes]
+
+    # Proxy-NCA loss (similar to Normlized Softmax and PAN，while the denominator does not contain positive prototype)
+    loss = 0
+    for x in range(features.shape[0]):
+        pos = torch.exp(cos[x, label[x]])
+        neg = torch.exp(cos[x]).sum(dim=-1)-pos
+        loss = loss + torch.log(pos / neg)
+    loss = -loss / features.shape[0]
+    
+    return loss
+
+
+def Proxy_Anchor(features, label, proxies, mrg=0.1, alpha=1): 
+    """
+    Input:
+    :param feature: [2*batch, dim]  concat image and text features
+    :param label: [2*batch]
+    :param proxies: [feature_dim, n_classes]
+    :return: Proxy Anchor loss
+    """
+    P = torch.t(proxies)  # [feature_dim, n_classes]-->[n_classes, feature_dim] 
+    n_classes = P.shape[0]
+    # similar to Proxc-NCA and Normlized Softmax
+    cos = F.linear(features, P)  # Calcluate cosine similarity [batch, n_classes]
+
+    P_one_hot = label # [batch, n_classes]
+    N_one_hot = 1 - P_one_hot
+
+    pos_exp = torch.exp(-alpha * (cos - mrg)) # [batch, n_class]
+    neg_exp = torch.exp(alpha * (cos + mrg))    # 出现了e+30导致nan
+
+    with_pos_proxies = torch.nonzero(P_one_hot.sum(dim=0) != 0).squeeze(dim=1)  # The set of positive proxies of data in the batch
+    num_valid_proxies = len(with_pos_proxies)  # The number of positive proxies
+
+    P_sim_sum = torch.where(P_one_hot == 1, pos_exp, torch.zeros_like(pos_exp)).sum(dim=0)
+    N_sim_sum = torch.where(N_one_hot == 1, neg_exp, torch.zeros_like(neg_exp)).sum(dim=0)
+
+    pos_term = torch.log(1 + P_sim_sum).sum() / num_valid_proxies
+    neg_term = torch.log(1 + N_sim_sum).sum() / n_classes
+    loss = pos_term + neg_term
+
+    return loss
+
+
 
 
 
