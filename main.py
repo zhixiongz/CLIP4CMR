@@ -12,7 +12,7 @@ import pickle
 import matplotlib.pyplot as plt
 from model import model
 from evaluate import fx_calc_map_label
-from metrics import PAN, Triplet_Loss, Contrastive_Loss, Label_Regression_Loss, Modality_invariant_Loss
+from metrics import PAN, Triplet_Loss, Contrastive_Loss, Label_Regression_Loss, Modality_invariant_Loss, Proxy_Anchor
 from torch.autograd import Function
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
@@ -61,6 +61,12 @@ def train(model, loader, optimizer, num_class, choose_loss='PAN', modality_imbal
         elif choose_loss == 'PCL':     # Prototype contrastive loss
             loss = PAN(img_feature, torch.t(centers), label_realvalue) \
                    + PAN(text_feature, torch.t(centers), label_realvalue)
+	elif choose_loss == 'PNCA':     # Prototype contrastive loss, sample anchor
+            loss = Proxy_NCA(img_feature, torch.t(centers), label_realvalue) \
+                   + Proxy_NCA(text_feature, torch.t(centers), label_realvalue)
+	elif choose_loss == 'P_Anchor':     # sample contrastive loss, prototypical anchor
+            loss = Proxy_Anchor(img_feature, torch.t(centers), label_realvalue) \
+                   + Proxy_Anchor(text_feature, torch.t(centers), label_realvalue)
 
         loss.backward()
         optimizer.step()
